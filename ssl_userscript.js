@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.1.2
+// @version     0.1.3
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
+// @homepage    https://github.com/chillfactor032/streamersonglist-userscript
 // @match       https://www.streamersonglist.com/*
 // @icon        https://www.streamersonglist.com/assets/icon/favicon-96x96.png
 // @updateURL   https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/ssl_userscript.js
@@ -83,7 +84,7 @@ function check_queue_reloaded(){
 }
 
 function queue(){
-    console.log("Queue Table Has Changed");
+    console.log("SSL UserScript: Reloading Queue Page Features");
     var move_top_button;
     var edit_button;
     var existing_buttons;
