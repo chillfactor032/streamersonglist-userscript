@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.1.1
+// @version     0.1.2
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @match       https://www.streamersonglist.com/*
 // @icon        https://www.streamersonglist.com/assets/icon/favicon-96x96.png
 // @updateURL   https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/ssl_userscript.js
 // @downloadURL https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/ssl_userscript.js
+// @supportURL  https://github.com/chillfactor032/streamersonglist-userscript
 // @run-at      document-idle
 // @grant       none
 // ==/UserScript==
@@ -15,7 +16,7 @@
 
 (function() {
     'use strict';
-    console.log("StreamerSongList UserScript: Starting");
+    console.log("SSL UserScript: Starting");
     var script_start_time = Date.now();
     var load_interval = setInterval(function(){
         var elapsed = Date.now()-script_start_time;
@@ -23,7 +24,7 @@
         if(found || elapsed > 10000){
             clearInterval(load_interval);
             if(elapsed > 10000){
-                console.log("StreamerSongList UserScript: Timeout Elapsed. Aborting.");
+                console.log("SSL UserScript: Timeout Elapsed. Aborting.");
             }
         }
     }, 1000);
@@ -37,7 +38,7 @@ function page_changed(){
     }else if(url.endsWith("/songs")){
         songs();
     }else{
-        console.log("StreamerSongList UserScript: Non-monitored Page");
+        console.log("SSL UserScript: Non-monitored Page");
     }
 }
 
@@ -52,19 +53,19 @@ function load(){
                 page_changed();
             }, 2000);
         }
-        console.log("StreamerSongList UserScript: Loaded");
+        console.log("SSL UserScript: Loaded");
     }
     return found;
 }
 
 function check_queue_reloaded(){
-    console.log("StreamerSongList UserScript: Queue Page Monitor [On]");
+    console.log("SSL UserScript: Queue Page Monitor [On]");
     var load_interval = setInterval(function(){
         var current_url = window.location.href;
         //Check if no longer on queue page
         //turn off monitor if navigated away from queue
         if(!current_url.endsWith("/queue")){
-            console.log("StreamerSongList UserScript: Queue Page Monitor [Off]");
+            console.log("SSL UserScript: Queue Page Monitor [Off]");
             clearInterval(load_interval);
             return;
         }
@@ -73,7 +74,7 @@ function check_queue_reloaded(){
         for(var x = 0; x < queue_rows.length; x++){
             buttons = queue_rows.item(x).querySelectorAll(".chill_injected");
             if(buttons.length==0){
-                console.log(`Queue Page Changed. Trigger Change Event`);
+                console.log("SSL UserScript: Queue Page Changed.");
                 queue();
                 break;
             }
@@ -112,7 +113,7 @@ window.queueEdit = function(){
     setTimeout(function (){
         var button = document.querySelector("button[data-cy='edit-button']");
         if(button == null){
-            console.log("StreamerSongList UserScript: Warning - Cannot find edit button");
+            console.log("SSL UserScript: Warning - Cannot find edit button");
             return;
         }
         button.click();
@@ -124,7 +125,7 @@ window.queueMoveToTop = function(row){
     setTimeout(function (){
         var button = document.querySelector("button[data-cy='move-top-button']");
         if(button == null){
-            console.log("StreamerSongList UserScript: Warning - Cannot find moveToTop button");
+            console.log("SSL UserScript: Warning - Cannot find moveToTop button");
             return;
         }
         button.click();
