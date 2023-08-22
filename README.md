@@ -1,4 +1,5 @@
-# streamersonglist-userscript
+# StreamerSongList Userscript
+
 Userscript for StreamerSongList that contains convenience features. Feel free to open an issue against this repo if you have a problem or want to suggest a feature.
 
 # Install Instructions (TamperMonkey)
