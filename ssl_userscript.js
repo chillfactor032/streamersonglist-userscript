@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.1.3
+// @version     0.1.4
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
@@ -96,41 +96,28 @@ function queue(){
                 // Buttons already exist, dont add any more
                 continue;
             }
+            title = queue_rows.item(x).children.item(2).innerHTML;
+            artist = queue_rows.item(x).children.item(3).innerHTML;
             move_top_button = document.createElement("button");
             move_top_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             move_top_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-vertical_align_top\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-vertical_align_top ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-vertical_align_top\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
-            move_top_button.setAttribute("onclick","queueMoveToTop("+(x+1)+");");
+            move_top_button.setAttribute("onclick","queueMoveToTop('"+title+"','"+artist+"');");
             edit_button = document.createElement("button");
             edit_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             edit_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-mode_edit\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-mode_edit ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-mode_edit\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
-            edit_button.setAttribute("onclick","queueEdit("+(x+1)+");");
+            edit_button.setAttribute("onclick","queueEdit('"+title+"','"+artist+"');");
             queue_rows.item(x).children.item(0).before(edit_button);
             queue_rows.item(x).children.item(0).before(move_top_button);
         }
     }
 }
 
-window.queueEdit = function(){
-    setTimeout(function (){
-        var button = document.querySelector("button[data-cy='edit-button']");
-        if(button == null){
-            console.log("SSL UserScript: Warning - Cannot find edit button");
-            return;
-        }
-        button.click();
-    }, 500);
+window.queueEdit = function(title, artist){
+    console.log("Move to Top: "+title+", "+artist);
 }
 
-window.queueMoveToTop = function(row){
-    var wait = 500;
-    setTimeout(function (){
-        var button = document.querySelector("button[data-cy='move-top-button']");
-        if(button == null){
-            console.log("SSL UserScript: Warning - Cannot find moveToTop button");
-            return;
-        }
-        button.click();
-    }, wait);
+window.queueMoveToTop = function(title, artist){
+    console.log("Move to Top: "+title+", "+artist);
 }
 
 function songs(){
