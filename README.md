@@ -1,6 +1,6 @@
 # StreamerSongList Userscript
 
-Userscript for StreamerSongList that contains convenience features. Feel free to open an issue against this repo if you have a problem or want to suggest a feature.
+Userscript for StreamerSongList that contains convenience features. If you want to see what the script is doing, it prints its actions to the Javascript Console. Feel free to open an issue against this repo if you have a problem or want to suggest a feature.
 
 # Install Instructions (TamperMonkey)
 
@@ -13,6 +13,10 @@ On the queue page, this script will add 2 buttons per row. It will add an edit b
 # Song Page Features
 
 No changes have been made to the Song page. 
+
+# Known Issues
+
+The edit button added to the queue rows will only work if the checkbox is unchecked. This is because the act of clicking the button checks the box. I may eventually fix this if it becomes a problem.
 
 # Contact
 
