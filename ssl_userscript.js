@@ -35,8 +35,10 @@
 function page_changed(){
     var url = window.location.href;
     if(url.endsWith("/queue")){
+        updateStreamerId();
         check_queue_reloaded();
     }else if(url.endsWith("/songs")){
+        updateStreamerId();
         songs();
     }else{
         console.log("SSL UserScript: Non-monitored Page");
@@ -54,7 +56,7 @@ function load(){
                 page_changed();
             }, 2000);
         }
-        console.log("SSL UserScript: Loaded");
+        console.log("SSL UserScript: Loaded Successfully");
     }
     return found;
 }
@@ -96,8 +98,8 @@ function queue(){
                 // Buttons already exist, dont add any more
                 continue;
             }
-            title = queue_rows.item(x).children.item(2).innerHTML;
-            artist = queue_rows.item(x).children.item(3).innerHTML;
+            var title = queue_rows.item(x).children.item(2).innerHTML;
+            var artist = queue_rows.item(x).children.item(3).innerHTML;
             move_top_button = document.createElement("button");
             move_top_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             move_top_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-vertical_align_top\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-vertical_align_top ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-vertical_align_top\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
@@ -112,12 +114,136 @@ function queue(){
     }
 }
 
+// Check to see if localStorage streamerData needs to be updated
+function checkUpdateStreamerData(){
+    const url = window.location.href;
+    const streamerData = localStorage.getItem("streamerData");
+    //If its not set, update
+    if(streamerData == null){
+        return true;
+    }
+    const obj = JSON.parse(streamerData);
+    var username = "";
+    var url_fragment = localStorage.getItem("StreamerSonglist_lastUrl");
+    // If the lastUrl object isnt in storage, something is wrong
+    if(url_fragment==null){
+        return true;
+    }
+    var split = url_fragment.split("/");
+    //If the username cant be determined by the lastURL obj, update
+    if(split.length < 3){
+        return true;
+    }
+    username = split[2];
+    // If the username from the url and the one from localStorage dont match
+    // Update
+    if(username.toLowerCase() != obj.name.toLowerCase()){
+        return true;
+    }
+    return false;
+}
+
+function updateStreamerId(){
+    var streamerData = localStorage.getItem("streamerData");
+    if(!checkUpdateStreamerData()){
+        if(streamerData != null){
+            const obj = JSON.parse(streamerData);
+            console.log(`SSL UserScript: StreamerId Lookup - ${obj.name}[${obj.id}]`);
+        }
+        return;
+    }
+    var username = "";
+    var url_fragment = localStorage.getItem("StreamerSonglist_lastUrl");
+    var split = url_fragment.split("/");
+    if(split.length < 3){
+        return;
+    }
+    username = split[2].trim();
+    const url = `https://api.streamersonglist.com/v1/streamers/${username}?platform=twitch&isUsername=true`
+    var request = new XMLHttpRequest();
+    request.open("GET", url);
+    request.onreadystatechange = function() {
+        if(this.readyState === 4 && this.status === 200) {
+            const obj = JSON.parse(this.responseText);
+            const streamerId = obj.id;
+            console.log(`SSL UserScript: StreamerId Lookup - ${username}[${streamerId}]`);
+            localStorage.setItem("streamerData", this.responseText);
+        }
+    };
+    request.send();
+}
+
+function getStreamerData(){
+    const streamerData = localStorage.getItem("streamerData");
+    if(streamerData==null){
+        return null;
+    }
+    const obj = JSON.parse(streamerData);
+    return obj;
+}
+
+window.getQueue = function(){
+    var jwt_token = localStorage.getItem("StreamerSonglist_authToken");
+    console.log(jwt_token);
+    var request = new XMLHttpRequest();
+    request.open("GET", "https://api.streamersonglist.com/v1/streamers/2294/queue");
+    request.onreadystatechange = function() {
+        if(this.readyState === 4 && this.status === 200) {
+            document.getElementById("result").innerHTML = this.responseText;
+        }
+    };
+    request.send();
+}
+
 window.queueEdit = function(title, artist){
-    console.log("Move to Top: "+title+", "+artist);
+    setTimeout(function (){
+        var button = document.querySelector("button[data-cy='edit-button']");
+        if(button == null){
+            console.log("SSL UserScript: Warning - Cannot find edit button");
+            return;
+        }
+        button.click();
+    }, 500);
 }
 
 window.queueMoveToTop = function(title, artist){
-    console.log("Move to Top: "+title+", "+artist);
+    var queueId;
+    const streamerData = getStreamerData();
+    var streamerId = streamerData.id;
+    const queue_url = `https://api.streamersonglist.com/v1/streamers/${streamerId}/queue`
+    var jsonData = {};
+    var jwt_token = localStorage.getItem("StreamerSonglist_authToken").replaceAll("\"", "");
+    var request = new XMLHttpRequest();
+    request.open("GET", queue_url);
+    request.onreadystatechange = function() {
+        if(this.readyState === 4 && this.status === 200) {
+            //find song we want to move
+            const queueJson = JSON.parse(this.responseText);
+            for(var song of queueJson.list){
+                if(song.song.artist == artist && song.song.title == title){
+                    queueId = song.id
+                    const put_url = `https://api.streamersonglist.com/v1/streamers/${streamerId}/queue/${queueId}`;
+                    song.position = 1;
+                    var put_request = new XMLHttpRequest();
+                    put_request.open("PUT", put_url);
+                    put_request.setRequestHeader("Authorization", `Bearer ${jwt_token}`);
+                    put_request.setRequestHeader("Content-Type", "application/json");
+                    put_request.onreadystatechange = function() {
+                        if(this.readyState === 4 && this.status === 200) {
+                            const obj = JSON.parse(this.responseText);
+                            const prevPosition = obj.previousPosition;
+                            const curPosition = obj.queue.position;
+                            console.log(`SSL UserScript: Moved song ${prevPosition} to position ${curPosition}`);
+                        }
+                    };
+                    put_request.send(JSON.stringify(song));
+                    return;
+                }
+            }
+            console.log(`SSL UserScript: Error - could not find match in queue for ${title} - ${artist}`);
+        }
+    };
+    request.send();
 }
 
 function songs(){
