@@ -9,7 +9,7 @@
 // @icon        https://www.streamersonglist.com/assets/icon/favicon-96x96.png
 // @updateURL   https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/ssl_userscript.js
 // @downloadURL https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/ssl_userscript.js
-// @supportURL  https://github.com/chillfactor032/streamersonglist-userscript
+// @supportURL  https://github.com/chillfactor032/streamersonglist-userscript/issues
 // @run-at      document-idle
 // @grant       none
 // ==/UserScript==
