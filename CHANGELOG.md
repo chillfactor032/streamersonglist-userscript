@@ -2,6 +2,12 @@
 
 Changes to the script over time will be logged here.
 
+# Version 0.2.1
+
+### Released 2023-08-27
+
+- Updated the artist and title to be URL encoded to prevent problems with special characters
+
 # Version 0.2.0 
 
 ### Released 2023-08-24

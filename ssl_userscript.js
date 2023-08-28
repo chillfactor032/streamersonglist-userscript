@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.2.0
+// @version     0.2.1
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
@@ -98,8 +98,8 @@ function queue(){
                 // Buttons already exist, dont add any more
                 continue;
             }
-            var title = queue_rows.item(x).children.item(2).innerHTML;
-            var artist = queue_rows.item(x).children.item(3).innerHTML;
+            var title = encodeURIComponent(queue_rows.item(x).children.item(2).innerHTML);
+            var artist = encodeURIComponent(queue_rows.item(x).children.item(3).innerHTML);
             move_top_button = document.createElement("button");
             move_top_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             move_top_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-vertical_align_top\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-vertical_align_top ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-vertical_align_top\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
@@ -107,7 +107,7 @@ function queue(){
             edit_button = document.createElement("button");
             edit_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             edit_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-mode_edit\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-mode_edit ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-mode_edit\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
-            edit_button.setAttribute("onclick","queueEdit('"+title+"','"+artist+"');");
+            edit_button.setAttribute("onclick","queueEdit();");
             queue_rows.item(x).children.item(0).before(edit_button);
             queue_rows.item(x).children.item(0).before(move_top_button);
         }
@@ -195,7 +195,7 @@ window.getQueue = function(){
     request.send();
 }
 
-window.queueEdit = function(title, artist){
+window.queueEdit = function(){
     setTimeout(function (){
         var button = document.querySelector("button[data-cy='edit-button']");
         if(button == null){
@@ -207,6 +207,9 @@ window.queueEdit = function(title, artist){
 }
 
 window.queueMoveToTop = function(title, artist){
+    title = decodeURIComponent(title);
+    artist = decodeURIComponent(artist);
+    console.log(`${artist} - ${title}`);
     var queueId;
     const streamerData = getStreamerData();
     var streamerId = streamerData.id;
