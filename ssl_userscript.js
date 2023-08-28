@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.2.1
+// @version     0.2.2
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
@@ -78,6 +78,7 @@ function check_queue_reloaded(){
             buttons = queue_rows.item(x).querySelectorAll(".chill_injected");
             if(buttons.length==0){
                 console.log("SSL UserScript: Queue Page Changed.");
+                injectStyles();
                 queue();
                 break;
             }
@@ -90,13 +91,22 @@ function queue(){
     var move_top_button;
     var edit_button;
     var existing_buttons;
+    var note;
+    var css_class;
     var queue_rows = document.getElementsByTagName("mat-row");
+    var bumpCnt = 0;
     for(var x = 0; x < queue_rows.length; x++){
         if(queue_rows.item(x).children.length > 0){
             existing_buttons = queue_rows.item(x).querySelectorAll(".chill_injected");
             if(existing_buttons.length > 0){
                 // Buttons already exist, dont add any more
                 continue;
+            }
+            note = queue_rows.item(x).children[7].innerHTML;
+            css_class = noteToBumpLevel(note);
+            if(css_class.length>0){
+                queue_rows.item(x).classList.add(css_class);
+                bumpCnt++;
             }
             var title = encodeURIComponent(queue_rows.item(x).children.item(2).innerHTML);
             var artist = encodeURIComponent(queue_rows.item(x).children.item(3).innerHTML);
@@ -111,6 +121,14 @@ function queue(){
             queue_rows.item(x).children.item(0).before(edit_button);
             queue_rows.item(x).children.item(0).before(move_top_button);
         }
+    }
+    var tool_bar = document.querySelector("mat-toolbar-row");
+    if(tool_bar!=null){
+        var bump_count_button = document.createElement("span");
+        bump_count_button.className = "chill_injected mat-focus-indicator";
+        bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
+        bump_count_button.setAttribute("style", "margin-left: 100px; width: 100%; color: white; font-size: 1.2em;");
+        tool_bar.children.item(tool_bar.children.length-1).append(bump_count_button);
     }
 }
 
@@ -209,7 +227,6 @@ window.queueEdit = function(){
 window.queueMoveToTop = function(title, artist){
     title = decodeURIComponent(title);
     artist = decodeURIComponent(artist);
-    console.log(`${artist} - ${title}`);
     var queueId;
     const streamerData = getStreamerData();
     var streamerId = streamerData.id;
@@ -249,15 +266,72 @@ window.queueMoveToTop = function(title, artist){
     request.send();
 }
 
+function injectStyles(){
+    var css_text = `
+.bump {
+    background-color: #003300;
+}
+.bump .inactive {
+    color: #00e600;
+}
+.cpbump {
+    background-color: #003366;
+}
+.cpbump .inactive {
+    color: #3399ff;
+}
+.bitsbump {
+    background-color: #003366;
+}
+.bitsbump .inactive {
+    color: #3399ff;
+}
+.gsbump {
+    background-color: #003366;
+}
+.gsbump .inactive {
+    color: #3399ff;
+}
+.donobump {
+    background-color: #003366;
+}
+.donobump .inactive {
+    color: #3399ff;
+}
+.t3bump {
+    background-color: #003366;
+}
+.t3bump .inactive {
+    color: #3399ff;
+}
+`;
+    var style = document.createElement('style');
+    style.type = 'text/css';
+    style.innerHTML = css_text;
+    document.getElementsByTagName('head')[0].appendChild(style);
+}
+
+function noteToBumpLevel(note){
+    note = note.toLowerCase().replaceAll(" ", "");
+    if(note==null){
+        return "";
+    }
+    if(note.includes("cpbump")){
+        return "cpbump";
+    }else if(note.includes("bitsbump")){
+        return "bitsbump";
+    }else if(note.includes("gsbump")){
+        return "gsbump";
+    }else if(note.includes("donobump")){
+        return "donobump";
+    }else if(note.includes("t3bump")){
+        return "t3bump";
+    }else if(note.includes("bump")){
+        return "bump";
+    }
+    return "";
+}
+
 function songs(){
     console.log("Song Page Loaded. Maybe add some features to this page?");
 }
-
-
-
-
-
-
-
-
-

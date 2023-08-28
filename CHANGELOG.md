@@ -2,6 +2,12 @@
 
 Changes to the script over time will be logged here.
 
+# Version 0.2.2
+
+### Released 2023-08-27
+
+- Added color coding to bumped songs
+
 # Version 0.2.1
 
 ### Released 2023-08-27
