@@ -2,6 +2,14 @@
 
 Changes to the script over time will be logged here.
 
+# Version 0.2.3
+
+### Released 2023-09-05
+
+- Fixed single quotes breaking "move to top of queue" feature.
+- Fixed Bump counter being duplicated
+- Added multiple colors for different types of bumps
+
 # Version 0.2.2
 
 ### Released 2023-08-27

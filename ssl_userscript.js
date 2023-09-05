@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.2.2
+// @version     0.2.3
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
@@ -95,6 +95,7 @@ function queue(){
     var css_class;
     var queue_rows = document.getElementsByTagName("mat-row");
     var bumpCnt = 0;
+    var tool_bar;
     for(var x = 0; x < queue_rows.length; x++){
         if(queue_rows.item(x).children.length > 0){
             existing_buttons = queue_rows.item(x).querySelectorAll(".chill_injected");
@@ -108,12 +109,23 @@ function queue(){
                 queue_rows.item(x).classList.add(css_class);
                 bumpCnt++;
             }
-            var title = encodeURIComponent(queue_rows.item(x).children.item(2).innerHTML);
-            var artist = encodeURIComponent(queue_rows.item(x).children.item(3).innerHTML);
+            var title_element = queue_rows.item(x).children.item(2);
+            var title = title_element.innerHTML;
+            var artist;
+
+            if(title_element.classList.contains("mat-column-nonlist-song")){
+                title = queue_rows.item(x).children.item(2).innerHTML;
+                title = title.replaceAll("<!---->","");
+                artist = "";
+                console.log("Non-songlist song: "+title);
+            }else{
+                artist = queue_rows.item(x).children.item(3).innerHTML;
+            }
+
             move_top_button = document.createElement("button");
             move_top_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             move_top_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-vertical_align_top\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-vertical_align_top ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-vertical_align_top\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
-            move_top_button.setAttribute("onclick","queueMoveToTop('"+title+"','"+artist+"');");
+            move_top_button.setAttribute("onclick",`queueMoveToTop(\"${title}\",\"${artist}\");`);
             edit_button = document.createElement("button");
             edit_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             edit_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-mode_edit\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-mode_edit ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-mode_edit\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
@@ -122,13 +134,19 @@ function queue(){
             queue_rows.item(x).children.item(0).before(move_top_button);
         }
     }
-    var tool_bar = document.querySelector("mat-toolbar-row");
+    tool_bar = document.querySelector("mat-toolbar-row");
     if(tool_bar!=null){
-        var bump_count_button = document.createElement("span");
-        bump_count_button.className = "chill_injected mat-focus-indicator";
-        bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
-        bump_count_button.setAttribute("style", "margin-left: 100px; width: 100%; color: white; font-size: 1.2em;");
-        tool_bar.children.item(tool_bar.children.length-1).append(bump_count_button);
+        var bump_count_button = tool_bar.querySelector(".chill_injected");
+        if(bump_count_button==null){
+            bump_count_button = document.createElement("span");
+            bump_count_button.className = "chill_injected mat-focus-indicator";
+            bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
+            bump_count_button.setAttribute("style", "margin-left: 100px; width: 100%; color: white; font-size: 1.2em;");
+            tool_bar.children.item(tool_bar.children.length-1).append(bump_count_button);
+        }else{
+            bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
+        }
+
     }
 }
 
@@ -201,10 +219,11 @@ function getStreamerData(){
 }
 
 window.getQueue = function(){
+    const streamerData = getStreamerData();
+    var streamerId = streamerData.id;
     var jwt_token = localStorage.getItem("StreamerSonglist_authToken");
-    console.log(jwt_token);
     var request = new XMLHttpRequest();
-    request.open("GET", "https://api.streamersonglist.com/v1/streamers/2294/queue");
+    request.open("GET", `https://api.streamersonglist.com/v1/streamers/${streamerId}/queue`);
     request.onreadystatechange = function() {
         if(this.readyState === 4 && this.status === 200) {
             document.getElementById("result").innerHTML = this.responseText;
@@ -225,14 +244,14 @@ window.queueEdit = function(){
 }
 
 window.queueMoveToTop = function(title, artist){
-    title = decodeURIComponent(title);
-    artist = decodeURIComponent(artist);
     var queueId;
     const streamerData = getStreamerData();
     var streamerId = streamerData.id;
     const queue_url = `https://api.streamersonglist.com/v1/streamers/${streamerId}/queue`
     var jsonData = {};
     var jwt_token = localStorage.getItem("StreamerSonglist_authToken").replaceAll("\"", "");
+    var queueArtist;
+    var queueTitle;
     var request = new XMLHttpRequest();
     request.open("GET", queue_url);
     request.onreadystatechange = function() {
@@ -240,7 +259,15 @@ window.queueMoveToTop = function(title, artist){
             //find song we want to move
             const queueJson = JSON.parse(this.responseText);
             for(var song of queueJson.list){
-                if(song.song.artist == artist && song.song.title == title){
+                if(song.song == null){
+                    //Non-songlist Song
+                    queueArtist = "";
+                    queueTitle = song.nonlistSong;
+                }else{
+                    queueArtist = song.song.artist;
+                    queueTitle = song.song.title;
+                }
+                if(queueArtist == artist && queueTitle == title){
                     queueId = song.id
                     const put_url = `https://api.streamersonglist.com/v1/streamers/${streamerId}/queue/${queueId}`;
                     song.position = 1;
