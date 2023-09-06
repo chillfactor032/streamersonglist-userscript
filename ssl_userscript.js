@@ -1,14 +1,17 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.2.3
+// @version     0.2.4
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
 // @match       https://www.streamersonglist.com/*
 // @icon        https://www.streamersonglist.com/assets/icon/favicon-96x96.png
+// @updateURL   https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/version.js
 // @downloadURL https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/ssl_userscript.js
 // @supportURL  https://github.com/chillfactor032/streamersonglist-userscript/issues
+// @require     https://backbeatbot.com/ssl/CustomHexColorPicker/CustomHexColorPicker.lib.js
+// @require     https://backbeatbot.com/ssl/CustomHexColorPicker/style.css
 // @run-at      document-idle
 // @grant       none
 // ==/UserScript==
@@ -95,6 +98,9 @@ function queue(){
     var queue_rows = document.getElementsByTagName("mat-row");
     var bumpCnt = 0;
     var tool_bar;
+    var header_row;
+    var header_spacer;
+    var ssl_table;
     for(var x = 0; x < queue_rows.length; x++){
         if(queue_rows.item(x).children.length > 0){
             existing_buttons = queue_rows.item(x).querySelectorAll(".chill_injected");
@@ -142,10 +148,14 @@ function queue(){
             bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
             bump_count_button.setAttribute("style", "margin-left: 100px; width: 100%; color: white; font-size: 1.2em;");
             tool_bar.children.item(tool_bar.children.length-1).append(bump_count_button);
+            header_row = document.querySelector("mat-header-row");
+            header_row.children[0].before(header_row.children[0].cloneNode());
+            ssl_table = document.querySelector("ssl-table");
+            var bump_color_div = getColorSettingsDiv();
+            ssl_table.after(bump_color_div);
         }else{
             bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
         }
-
     }
 }
 
@@ -176,6 +186,28 @@ function checkUpdateStreamerData(){
         return true;
     }
     return false;
+}
+
+function getColorSettingsDiv(){
+    var bump_color_div = document.createElement("div");
+    bump_color_div.style = "margin-top: 20px; border-radius: 5px; padding: 10px; background-color: red;";
+    bump_color_div.innerHTML = `
+        <table border="1" style="border-collapse: collapse; padding: 5px; width: 50%;">
+          <thead>
+            <tr><th>Keyword</th><th>Background Color</th><th>Text Color</th><th>Inactive Chat Color</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><div class="colorInput" data-color="transparent">select color</div></td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
+            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
+            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
+            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
+            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
+          </tbody>
+        </table>
+        
+        <button onclick="save_bump_colors();">Save</button>
+    `;
+    return bump_color_div;
 }
 
 function updateStreamerId(){
