@@ -2,6 +2,12 @@
 
 Changes to the script over time will be logged here.
 
+# Version 1.0.1
+
+### Released 2023-09-07
+
+- Removed superfluous console log messages
+
 # Version 1.0.0
 
 ### Released 2023-09-07

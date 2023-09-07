@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     1.0.0
+// @version     1.0.1
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
@@ -158,7 +158,6 @@ function queue(){
 }
 
 function refreshBumpHighlights(){
-    console.log("Refresh Bump Highlights");
     var bump_styles = getBumpStyles();
     var note;
     var css_class;
@@ -178,7 +177,6 @@ function refreshBumpHighlights(){
                 queue_rows.item(x).classList.remove(`chill-bump-${i}`);
             }
             note = note.replaceAll("<!---->","");
-            console.log(`Note[${x}]: ${note}`);
             css_class = noteToBumpLevel(note);
             if(css_class.length>0){
                 queue_rows.item(x).classList.add(css_class);
@@ -188,7 +186,6 @@ function refreshBumpHighlights(){
     }
     bunp_cnt_element = document.getElementById("bump-count-label");
     if(bunp_cnt_element!=null){
-        console.log("Bump Count Updated");
         bunp_cnt_element.innerHTML = `Bump Count: ${bumpCnt}`;
     }
     injectStyles();
