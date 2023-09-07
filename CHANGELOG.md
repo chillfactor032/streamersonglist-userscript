@@ -2,6 +2,12 @@
 
 Changes to the script over time will be logged here.
 
+# Version 1.0.0
+
+### Released 2023-09-07
+
+- Added a bump color table that can be used to customized which rows are highlighted and which colors are used
+
 # Version 0.2.3
 
 ### Released 2023-09-05

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     0.2.4
+// @version     1.0.0
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
@@ -11,15 +11,18 @@
 // @downloadURL https://raw.githubusercontent.com/chillfactor032/streamersonglist-userscript/main/ssl_userscript.js
 // @supportURL  https://github.com/chillfactor032/streamersonglist-userscript/issues
 // @require     https://backbeatbot.com/ssl/CustomHexColorPicker/CustomHexColorPicker.lib.js
-// @require     https://backbeatbot.com/ssl/CustomHexColorPicker/style.css
+// @resource    IMPORTED_CSS https://backbeatbot.com/ssl/CustomHexColorPicker/style.css
 // @run-at      document-idle
-// @grant       none
+// @grant       GM_getResourceText
+// @grant       GM_addStyle
+// @grant       unsafeWindow
 // ==/UserScript==
-
 
 (function() {
     'use strict';
     console.log("SSL UserScript: Starting");
+    const my_css = GM_getResourceText("IMPORTED_CSS");
+    GM_addStyle(my_css);
     var script_start_time = Date.now();
     var load_interval = setInterval(function(){
         var elapsed = Date.now()-script_start_time;
@@ -53,7 +56,6 @@ function load(){
     if(found){
         var url = window.location.href;
         nav_elements.item(0).onclick = function(){
-            console.log("Check Page Changed");
             setTimeout(function(){
                 page_changed();
             }, 2000);
@@ -80,7 +82,6 @@ function check_queue_reloaded(){
             buttons = queue_rows.item(x).querySelectorAll(".chill_injected");
             if(buttons.length==0){
                 console.log("SSL UserScript: Queue Page Changed.");
-                injectStyles();
                 queue();
                 break;
             }
@@ -90,10 +91,10 @@ function check_queue_reloaded(){
 
 function queue(){
     console.log("SSL UserScript: Reloading Queue Page Features");
+    var bump_styles = getBumpStyles();
     var move_top_button;
     var edit_button;
     var existing_buttons;
-    var note;
     var css_class;
     var queue_rows = document.getElementsByTagName("mat-row");
     var bumpCnt = 0;
@@ -108,25 +109,16 @@ function queue(){
                 // Buttons already exist, dont add any more
                 continue;
             }
-            note = queue_rows.item(x).children[7].innerHTML;
-            css_class = noteToBumpLevel(note);
-            if(css_class.length>0){
-                queue_rows.item(x).classList.add(css_class);
-                bumpCnt++;
-            }
             var title_element = queue_rows.item(x).children.item(2);
             var title = title_element.innerHTML;
             var artist;
-
             if(title_element.classList.contains("mat-column-nonlist-song")){
                 title = queue_rows.item(x).children.item(2).innerHTML;
                 title = title.replaceAll("<!---->","");
                 artist = "";
-                console.log("Non-songlist song: "+title);
             }else{
                 artist = queue_rows.item(x).children.item(3).innerHTML;
             }
-
             move_top_button = document.createElement("button");
             move_top_button.className = "chill_injected mat-focus-indicator mat-tooltip-trigger mat-icon-button mat-button-base ng-star-inserted";
             move_top_button.innerHTML = "<span class=\"mat-button-wrapper\"><mat-icon _ngcontent-ege-c186=\"\" role=\"img\" fontset=\"ico\" fonticon=\"icon-vertical_align_top\" aria-hidden=\"true\" class=\"mat-icon notranslate icon-vertical_align_top ico mat-icon-no-color\" data-mat-icon-type=\"font\" data-mat-icon-name=\"icon-vertical_align_top\" data-mat-icon-namespace=\"ico\"></mat-icon></span><span matripple=\"\" class=\"mat-ripple mat-button-ripple mat-button-ripple-round\"></span><span class=\"mat-button-focus-overlay\"></span>";
@@ -144,8 +136,9 @@ function queue(){
         var bump_count_button = tool_bar.querySelector(".chill_injected");
         if(bump_count_button==null){
             bump_count_button = document.createElement("span");
+            bump_count_button.setAttribute("id", "bump-count-label");
             bump_count_button.className = "chill_injected mat-focus-indicator";
-            bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
+            bump_count_button.innerHTML = `Bump Count: 0`;
             bump_count_button.setAttribute("style", "margin-left: 100px; width: 100%; color: white; font-size: 1.2em;");
             tool_bar.children.item(tool_bar.children.length-1).append(bump_count_button);
             header_row = document.querySelector("mat-header-row");
@@ -153,9 +146,66 @@ function queue(){
             ssl_table = document.querySelector("ssl-table");
             var bump_color_div = getColorSettingsDiv();
             ssl_table.after(bump_color_div);
-        }else{
-            bump_count_button.innerHTML = `Bump Count: ${bumpCnt}`;
+            var customHexColorPicker = new CustomHexColorPicker();
+            var colorInputs = document.querySelectorAll('.colorInput');
+            for(var z = 0; z < colorInputs.length; z++){
+                customHexColorPicker.register(colorInputs.item(z));
+                colorInputs.item(z).onchange = colorInputChange.bind(colorInputs.item(z));
+            }
         }
+    }
+    refreshBumpHighlights();
+}
+
+function refreshBumpHighlights(){
+    console.log("Refresh Bump Highlights");
+    var bump_styles = getBumpStyles();
+    var note;
+    var css_class;
+    var queue_rows = document.getElementsByTagName("mat-row");
+    var bunp_cnt_element;
+    var bumpCnt = 0;
+    for(var x = 0; x < queue_rows.length; x++){
+        if(queue_rows.item(x).children.length > 0){
+            var title_element = queue_rows.item(x).children.item(4);
+            if(title_element.classList.contains("mat-column-nonlist-song")){
+                note = queue_rows.item(x).children[8].innerHTML;
+            }else{
+                note = queue_rows.item(x).children[9].innerHTML;
+            }
+            //Remove old injected classes
+            for(var i = 0; i < bump_styles.length; i++){
+                queue_rows.item(x).classList.remove(`chill-bump-${i}`);
+            }
+            note = note.replaceAll("<!---->","");
+            console.log(`Note[${x}]: ${note}`);
+            css_class = noteToBumpLevel(note);
+            if(css_class.length>0){
+                queue_rows.item(x).classList.add(css_class);
+                bumpCnt++;
+            }
+        }
+    }
+    bunp_cnt_element = document.getElementById("bump-count-label");
+    if(bunp_cnt_element!=null){
+        console.log("Bump Count Updated");
+        bunp_cnt_element.innerHTML = `Bump Count: ${bumpCnt}`;
+    }
+    injectStyles();
+}
+
+unsafeWindow.toggleBumpColorTable = function(){
+    var table = document.getElementById("bump-color-div");
+    var button = document.getElementById("show_hide_bump_color_table");
+    if(table==null || button==null){
+        return;
+    }
+    if (table.style.display === "none") {
+        table.style.display = "block";
+        button.innerHTML = "Hide Bump Highlighter Table";
+    } else {
+        table.style.display = "none";
+        button.innerHTML = "Show Bump Highlighter Table";
     }
 }
 
@@ -190,24 +240,134 @@ function checkUpdateStreamerData(){
 
 function getColorSettingsDiv(){
     var bump_color_div = document.createElement("div");
-    bump_color_div.style = "margin-top: 20px; border-radius: 5px; padding: 10px; background-color: red;";
+    bump_color_div.style = "margin-top: 20px; border-radius: 5px;";
+    var bump_styles = getBumpStyles();
+    var default_values = {
+        "keyword": "",
+        "background": "",
+        "text": "",
+        "inactive": ""
+    };
+    while(bump_styles.length < 5){
+        bump_styles.push(default_values);
+    }
+    saveBumpStyles(bump_styles);
+    var tbody = "";
+    for(var x = 0; x < bump_styles.length; x++){
+        var bg_color = "";
+        var text_color = "";
+        var inactive_color = "";
+        if(bump_styles[x].background != "" && bump_styles[x].background != "transparent"){
+            bg_color = `background-color: ${bump_styles[x].background};`;
+        }
+        if(bump_styles[x].text != "" && bump_styles[x].text != "transparent"){
+            text_color = `background-color: ${bump_styles[x].text};`;
+        }
+        if(bump_styles[x].inactive != "" && bump_styles[x].inactive != "transparent"){
+            inactive_color = `background-color: ${bump_styles[x].inactive};`;
+        }
+        tbody += `
+                <tr class="bump-color-row" style="padding: 5px;">
+                    <td><input type="text" id="bump-color-input-1" onblur="bumpColorKeywordChanged(this);" value="${bump_styles[x].keyword}" /></td>
+                    <td style="${bg_color}">
+                        <button class="colorInput" data-color="${bump_styles[x].background}">Select Color</button>
+                    </td>
+                    <td style="${text_color}">
+                        <button class="colorInput" data-color="${bump_styles[x].text}">Select Color</button>
+                    </td>
+                    <td style="${inactive_color}">
+                        <button class="colorInput" data-color="${bump_styles[x].inactive}">Select Color</button>
+                    </td>
+                    <td>
+                        <button onclick="clearBumpColorRow(${x});">Reset</button>
+                    </td>
+                </tr>
+        `;
+    }
     bump_color_div.innerHTML = `
-        <table border="1" style="border-collapse: collapse; padding: 5px; width: 50%;">
-          <thead>
-            <tr><th>Keyword</th><th>Background Color</th><th>Text Color</th><th>Inactive Chat Color</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><div class="colorInput" data-color="transparent">select color</div></td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
-            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
-            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
-            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
-            <tr><td>Keyword</td><td>Background Color</td><td>Text Color</td><td>Inactive Chat Color</td></tr>
-          </tbody>
+        <style>
+        #bump-color {
+
+        }
+        #bump-color td{
+            padding: 10px;
+            text-align: center;
+        }
+        #bump-color input{
+            box-sizing: border-box;
+            width: 100%;
+        }
+        </style>
+        <button id="show_hide_bump_color_table" onclick="window.toggleBumpColorTable();">Show Bump Highlighter Table</button><p>
+        <div id="bump-color-div" style="display: none;">
+        <table id="bump-color" border="1" style="border-collapse: collapse; padding: 5px; width: 65%;">
+            <thead>
+                <tr>
+                    <th>Keyword</th>
+                    <th>Background</th>
+                    <th>Text</th>
+                    <th>Inactive Chat</th>
+                    <th>Reset</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tbody}
+            </tbody>
         </table>
-        
-        <button onclick="save_bump_colors();">Save</button>
+        <div style="font-style: italic; font-size: 0.75em;">
+        *Keywords are not case sensitive and ignore spaces. If a color doesn't seem to change, try reloading the page.<br>
+        *Notes get matched to keywords top to bottom and stop after the first match, so more generic keywords should come last (e.g. "bump" vs "cp bump").
+        </div>
+        </div>
     `;
     return bump_color_div;
+}
+
+unsafeWindow.clearBumpColorRow = function(rowIndex){
+    var table = document.getElementById("bump-color");
+    if(rowIndex >= table.rows.length) return;
+    var row = table.rows[rowIndex+1];
+    row.children[0].children[0].value = "";
+    row.children[1].children[0].setAttribute("data-color", "");
+    row.children[2].children[0].setAttribute("data-color", "");
+    row.children[3].children[0].setAttribute("data-color", "");
+    row.children[1].style = "";
+    row.children[2].style = "";
+    row.children[3].style = "";
+    var bump_styles = getBumpStyles();
+    if(rowIndex >= bump_styles.length){
+        return;
+    }
+    bump_styles[rowIndex].keyword = "";
+    bump_styles[rowIndex].background = "";
+    bump_styles[rowIndex].text = "";
+    bump_styles[rowIndex].inactive = "";
+    saveBumpStyles(bump_styles);
+}
+
+unsafeWindow.bumpColorKeywordChanged = function(self){
+    var row = self.parentNode.parentNode;
+    var row_index = row.rowIndex-1;
+    var keyword = self.value;
+    if(keyword.length==0) return;
+    var bump_styles = getBumpStyles();
+    bump_styles[row_index].keyword = keyword;
+    saveBumpStyles(bump_styles);
+}
+
+function colorInputChange() {
+    var color = this.getAttribute('data-color');
+    this.parentNode.style = `background-color: ${color};`;
+    var row = this.parentNode.parentNode;
+    var row_index = row.rowIndex-1;
+    var background = row.children[1].children[0].getAttribute('data-color');
+    var text = row.children[2].children[0].getAttribute('data-color');
+    var inactive = row.children[3].children[0].getAttribute('data-color');
+    var bump_styles = getBumpStyles();
+    bump_styles[row_index].background = background;
+    bump_styles[row_index].text = text;
+    bump_styles[row_index].inactive = inactive;
+    saveBumpStyles(bump_styles);
 }
 
 function updateStreamerId(){
@@ -249,7 +409,7 @@ function getStreamerData(){
     return obj;
 }
 
-window.getQueue = function(){
+unsafeWindow.getQueue = function(){
     const streamerData = getStreamerData();
     var streamerId = streamerData.id;
     var jwt_token = localStorage.getItem("StreamerSonglist_authToken");
@@ -263,7 +423,7 @@ window.getQueue = function(){
     request.send();
 }
 
-window.queueEdit = function(){
+unsafeWindow.queueEdit = function(){
     setTimeout(function (){
         var button = document.querySelector("button[data-cy='edit-button']");
         if(button == null){
@@ -274,7 +434,7 @@ window.queueEdit = function(){
     }, 500);
 }
 
-window.queueMoveToTop = function(title, artist){
+unsafeWindow.queueMoveToTop = function(title, artist){
     var queueId;
     const streamerData = getStreamerData();
     var streamerId = streamerData.id;
@@ -325,48 +485,54 @@ window.queueMoveToTop = function(title, artist){
 }
 
 function injectStyles(){
-    var css_text = `
-.bump {
-    background-color: #003300;
-}
-.bump .inactive {
-    color: #00e600;
-}
-.cpbump {
-    background-color: #003366;
-}
-.cpbump .inactive {
-    color: #3399ff;
-}
-.bitsbump {
-    background-color: #003366;
-}
-.bitsbump .inactive {
-    color: #3399ff;
-}
-.gsbump {
-    background-color: #003366;
-}
-.gsbump .inactive {
-    color: #3399ff;
-}
-.donobump {
-    background-color: #003366;
-}
-.donobump .inactive {
-    color: #3399ff;
-}
-.t3bump {
-    background-color: #003366;
-}
-.t3bump .inactive {
-    color: #3399ff;
-}
-`;
-    var style = document.createElement('style');
-    style.type = 'text/css';
+    var bump_styles = getBumpStyles();
+    var css_text = "";
+    for(var x = 0; x < bump_styles.length; x++){
+        css_text += `
+            .chill-bump-${x} {
+                background-color: ${bump_styles[x].background};
+                color: ${bump_styles[x].text};
+            }
+            .chill-bump-${x} mat-cell {
+                color: ${bump_styles[x].text};
+            }
+            .chill-bump-${x} span {
+                color: ${bump_styles[x].text} !important;
+            }
+            .chill-bump-${x} .inactive {
+                color: ${bump_styles[x].inactive};
+            }
+        `;
+    }
+    var style = document.getElementById("chill-injected-style");
+    if(style==null){
+        style = document.createElement('style');
+        style.type = 'text/css';
+        style.setAttribute("id", "chill-injected-style");
+        document.getElementsByTagName('head')[0].appendChild(style);
+    }
     style.innerHTML = css_text;
-    document.getElementsByTagName('head')[0].appendChild(style);
+}
+
+function getBumpStyles(){
+    var bump_styles = localStorage.getItem("bump_styles");
+    if(bump_styles==null || bump_styles.length==0){
+        return [];
+    }
+    var bump_styles_json = JSON.parse(bump_styles);
+    return bump_styles_json;
+}
+
+function saveBumpStyles(styleArr){
+    var cur_styles = getBumpStyles();
+    var style_str = JSON.stringify(styleArr);
+    if(style_str == JSON.stringify(cur_styles)){
+        return;
+    }
+    localStorage.setItem("bump_styles", style_str);
+    injectStyles();
+    queue();
+    toast("[SSL Userscript] Bump color highlights have been saved.");
 }
 
 function noteToBumpLevel(note){
@@ -374,18 +540,13 @@ function noteToBumpLevel(note){
     if(note==null){
         return "";
     }
-    if(note.includes("cpbump")){
-        return "cpbump";
-    }else if(note.includes("bitsbump")){
-        return "bitsbump";
-    }else if(note.includes("gsbump")){
-        return "gsbump";
-    }else if(note.includes("donobump")){
-        return "donobump";
-    }else if(note.includes("t3bump")){
-        return "t3bump";
-    }else if(note.includes("bump")){
-        return "bump";
+    var bump_styles = getBumpStyles();
+    for(var x = 0; x < bump_styles.length; x++){
+        var keyword = bump_styles[x].keyword.toLowerCase().replaceAll(" ", "");
+        if(keyword.length==0) continue;
+        if(note.includes(keyword)){
+            return `chill-bump-${x}`;
+        }
     }
     return "";
 }
@@ -393,3 +554,33 @@ function noteToBumpLevel(note){
 function songs(){
     console.log("Song Page Loaded. Maybe add some features to this page?");
 }
+
+function toast(msg){
+    var toast_element = document.createElement("div");
+    toast_element.style = "position: absolute; right: 60px; bottom: 60px; z-index:999; margin: 10px;";
+    var toast_msg_div = document.createElement("div");
+    toast_msg_div.innerHTML = msg;
+    toast_msg_div.style = "margin: auto; font-size: 1em; background-color: green; text-align: center; padding: 20px; border-radius: 5px;";
+    toast_element.appendChild(toast_msg_div);
+    var body = document.querySelector("ssl-landing");
+    if(body==null){
+        return;
+    }
+    body.appendChild(toast_element);
+    setTimeout(function(){
+        toast_element.remove();
+    }, 1500);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
