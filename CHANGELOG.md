@@ -2,6 +2,12 @@
 
 Changes to the script over time will be logged here.
 
+# Version 1.0.3
+
+### Released 2023-09-21
+
+- Bumped the number of highlighters from 5 to 10
+
 # Version 1.0.1
 
 ### Released 2023-09-07

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Streamer Song List UserScript
 // @namespace   https://www.chillaspect.com
-// @version     1.0.1
+// @version     1.0.3
 // @description Convenience functions for StreamerSongList
 // @author      chillfactor032
 // @homepage    https://github.com/chillfactor032/streamersonglist-userscript
@@ -245,7 +245,7 @@ function getColorSettingsDiv(){
         "text": "",
         "inactive": ""
     };
-    while(bump_styles.length < 5){
+    while(bump_styles.length < 10){
         bump_styles.push(default_values);
     }
     saveBumpStyles(bump_styles);
@@ -297,7 +297,7 @@ function getColorSettingsDiv(){
         </style>
         <button id="show_hide_bump_color_table" onclick="window.toggleBumpColorTable();">Show Bump Highlighter Table</button><p>
         <div id="bump-color-div" style="display: none;">
-        <table id="bump-color" border="1" style="border-collapse: collapse; padding: 5px; width: 65%;">
+        <table id="bump-color" border="1" style="border-collapse: collapse; padding: 5px; width: 65%; border-radius: 5px;">
             <thead>
                 <tr>
                     <th>Keyword</th>
